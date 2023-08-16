@@ -1,0 +1,33 @@
+---
+
+
+- name: get start amount of usb devices
+  shell: "lsblk -o 'NAME,SIZE,TYPE,RM' -l | grep disk"
+  register: before_insert_usb_devices
+
+
+- name: ask user to insert usb
+  ansible.builtin.pause: 
+    prompt: Insert usb and press ENTER
+
+
+- name: check that usb has been inserted
+  shell: "lsblk -o 'NAME,SIZE,TYPE,RM' -l | grep disk"
+  register: after_insert_usb_devices
+  until: after_insert_usb_devices.stdout != before_insert_usb_devices.stdout
+  retries: 5
+  delay: 2
+
+
+- name: ask user to remove usb
+  ansible.builtin.pause: 
+    prompt: Remove usb and press ENTER
+
+
+- name: check that usb has been removed
+  shell: "lsblk -o 'NAME,SIZE,TYPE,RM' -l | grep disk"
+  register: after_remove_usb_devices
+  until: after_remove_usb_devices.stdout == before_insert_usb_devices.stdout 
+  retries: 5
+  delay: 2
+

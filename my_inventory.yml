@@ -1,0 +1,6 @@
+usb_hosts:
+  hosts:
+    virtual_machine:
+      ansible_host: 
+      ansible_user: 
+      ansible_password: 

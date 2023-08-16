@@ -1,0 +1,6 @@
+- name: simple task
+  hosts: usb_hosts
+  gather_facts: false
+
+  roles:
+    - usb_simple

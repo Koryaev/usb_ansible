@@ -1,0 +1,85 @@
+---
+
+
+- name: get start amount of usb devices
+  shell: "lsblk -o 'NAME,TYPE' -l | grep disk"
+  register: before_insert_usb_devices
+
+
+- name: extract usb devices names
+  set_fact:
+    before_insert_usb_names:
+      "{{before_insert_usb_devices.stdout_lines | map('split', ' ') | map(attribute='0') | list }}"
+
+
+- name: ask user to insert usb
+  ansible.builtin.pause: 
+    prompt: Insert usb and press ENTER
+
+
+- name: check that usb has been inserted
+  shell: "lsblk -o 'NAME,TYPE' -l | grep disk"
+  register: after_insert_usb_devices
+  until: after_insert_usb_devices.stdout != before_insert_usb_devices.stdout
+  retries: 5
+  delay: 2
+
+
+
+- name: extract usb devices names after insert
+  set_fact:
+    after_insert_usb_names:
+      "{{after_insert_usb_devices.stdout_lines | map('split', ' ') | map(attribute='0') | list }}"
+
+
+
+- name: get name of new usb device
+  set_fact:
+    target_usb_name:
+      "{{ after_insert_usb_names | difference(before_insert_usb_names) | first }}"
+
+
+
+- name: ask user to remove usb
+  ansible.builtin.pause: 
+    prompt: Remove usb and press ENTER
+
+
+- name: check that usb has been removed
+  shell: "lsblk -o 'NAME,TYPE' -l | grep disk"
+  register: after_remove_usb_devices
+  until: after_remove_usb_devices.stdout == before_insert_usb_devices.stdout 
+  retries: 5
+  delay: 2
+
+
+- name: ask user to insert target usb
+  ansible.builtin.pause: 
+    prompt: Insert usb which just was removed and press ENTER
+
+
+- name: check that usb has been inserted
+  shell: "lsblk -o 'NAME,TYPE' -l | grep disk"
+  register: after_target_insert_devices
+  until: after_target_insert_devices.stdout != before_insert_usb_devices.stdout
+  retries: 5
+  delay: 2
+
+
+- name: get name of usb devices after target usb inserted
+  set_fact:
+    after_target_insert_usb_names:
+      "{{after_target_insert_devices.stdout_lines | map('split', ' ') | map(attribute='0') | list }}"
+
+
+- name: print if not target
+  debug:
+    msg: It is another usb. Error
+  when: target_usb_name not in after_target_insert_usb_names
+
+
+- name: print if target
+  debug:
+    msg: OK, THAT IS CORRECT USB
+  when: target_usb_name in after_target_insert_usb_names
+  
